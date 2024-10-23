@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+            text-align: center;
+            padding: 2px;
+        }
+        .clock-container {
+            position: relative;
+            width: 500px; /* Tamaño del contenedor */
+            height: 500px;
+            margin: auto;
+            border-radius: 50%;
+            background-color: white;
+           margin-bottom: 10px;
+        }
+        .letter {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px; /* Tamaño del círculo */
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border: 2px solid lightgray;
+            border-radius: 50%;
+            transform-origin: center;
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+        .letter.focused {
+            border-color: darkorange;
+        }
+        .letter.clicked {
+            background-color: red;
+            color: white;
+        }
+        .letter.dblclicked {
+            background-color: green;
+            color: white;
+        }
+        .timer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px; /* Tamaño del cronómetro */
+            color:#808b96
+        }
+
+        .counter {
+            text-align: center;
+            font-size: 40px;
+            margin-top: 10px;
+        }
+
+.button-do {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Espacio entre los botones */
+padding: 10px 20px;
+margin-top: 50px;
+}
+
+.comodin-button {
+    padding: 5px 5px; /* Aumenta el tamaño del botón */
+    border: none; /* Quita el borde */
+    background-color: white; /* Fondo blanco */
+    font-size: 2em; /* Aumenta el tamaño de la letra */
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s; /* Añade una transición para un efecto suave */
+}
+
+.next-button, .correct-button, .incorrect-button, .stop-button {
+    padding: 15px 30px; /* Aumenta el tamaño del botón */
+    border: 2px solid lightgrey; /* Cambia el borde a un color más claro */
+    font-size: 2em; /* Aumenta el tamaño de la letra */
+    cursor: pointer;
+    border-radius: 5px; /* Añade bordes redondeados si lo deseas */
+    transition: background-color 0.3s, border-color 0.3s; /* Añade una transición para un efecto suave */
+}
+
+.next-button:hover, .correct-button:hover, .incorrect-button:hover, .stop-button:hover, .comodin-button:hover  {
+    background-color: #e0e0e0; /* Añade un color de fondo al pasar el ratón */
+    border-color: grey; /* Cambia el color del borde al pasar el ratón */
+}
+
+    </style>
+    <title>Alphabet Clock</title>
+</head>
+<body>
+   <h1>El Rosco de Seguros</h1>
+
+<div class="botton-comodines" id="bottonComodin">
+<button class="comodin-button" id="comodinbutton1">🃏</button>
+    <button class="comodin-button" id="comodinbutton2">🃏</button>
+   <button class="comodin-button" id="comodinbutton3">🃏</button>
+<button class="comodin-button" id="comodinbutton4">🃏</button>
+<button class="comodin-button" id="comodinbutton5">🃏</button>
+
+
+ </div>
+    <div class="clock-container" id="clock">
+        <div class="timer" id="timer">200</div>
+    </div>
+
+<div class="botton-do" id="bottonD">
+<button class="stop-button" id="stopButton">⏸️</button>
+    <button class="next-button" id="nextButton">▶️</button>
+   <button class="correct-button" id="correctButton">🆗</button>
+<button class="incorrect-button" id="incorrectButton">❌</button>
+
+
+ </div>
+<div class="clock-container" id="clock">
+    <div class="counter" id="counter"> </div>
+
+    <script>
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVXYZ".split("");
+        const clockContainer = document.getElementById('clock');
+        const timerElement = document.getElementById('timer');
+        const counterElement = document.getElementById('counter');
+        let focusedIndex = 0;
+        let correctCount = 0;
+
+        function createLetters() {
+            alphabet.forEach((letter, index) => {
+                const letterElement = document.createElement('div');
+                letterElement.className = 'letter';
+                letterElement.innerText = letter;
+                const angle = ((index - 7 + alphabet.length) % alphabet.length) * (360 / alphabet.length); // Ajusta el ángulo para que la A esté en la posición de las 12
+                const radians = (angle * Math.PI) / 180;
+                const radius = 200; // Ajusta el radio para dar más espacio entre los círculos
+                const x = radius * Math.cos(radians);
+                const y = radius * Math.sin(radians);
+                letterElement.style.transform = `translate(${x}px, ${y}px)`;
+                if (index === 0) letterElement.classList.add('focused'); // Foco inicial en la "A");
+                clockContainer.appendChild(letterElement);
+            });
+        }
+
+        function focusNextLetter() {
+            const letters = document.querySelectorAll('.letter');
+            letters[focusedIndex].classList.remove('focused');
+            focusedIndex = (focusedIndex + 1) % alphabet.length;
+            letters[focusedIndex].classList.add('focused');
+            playSound('next');
+        }
+
+        function playSound(type) {
+            const audio = new Audio(`${type}.mp3`);
+            audio.play();
+        }
+
+        document.getElementById('nextButton').addEventListener('click', focusNextLetter);
+        document.getElementById('correctButton').addEventListener('click', correct);
+        document.getElementById('incorrectButton').addEventListener('click', incorrect);
+
+       let timerInterval;
+let isTimerRunning = false;
+let timeLeft = 200; // Tiempo inicial en segundos
+       function updateTimer() {
+    const timerElement = document.getElementById('timer');
+    timerElement.innerText = timeLeft;
+    timerInterval = setInterval(() => {
+        if (timeLeft > 0) {
+            timeLeft--;
+            timerElement.innerText = timeLeft;
+        } else {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            alert("¡Tiempo terminado!");
+        }
+    }, 1000);
+}
+
+// Función para alternar entre pausar y reanudar el temporizador
+function toggleTimer() {
+ const timerElement = document.getElementById('timer')
+    if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        timerElement.style.color = "green";
+        playSound('pause');
+    } else {
+        updateTimer();
+        isTimerRunning = true;
+            timerElement.style.color = "#808b96";
+         playSound('pause');
+    }
+}
+
+document.getElementById('stopButton').addEventListener('click', toggleTimer);
+// updateTimer();
+
+document.addEventListener('keydown', (event) => {
+    const keyName = event.key.toLowerCase(); // Convierte la tecla a minúscula
+    if (alphabet.includes(keyName.toUpperCase())) {
+        playSound(keyName);
+    }
+});
+
+function playSound(letter) {
+    const audio = new Audio(`${letter}.mp3`);
+    audio.play();
+};
+
+function correct() {
+            const focusedLetter = document.querySelector('.letter.focused');
+            if (focusedLetter) {
+                focusedLetter.classList.add('dblclicked');
+                playSound('correct');
+                correctCount += 1;
+                counterElement.innerText = `✅ ${correctCount}`;
+}};
+
+function incorrect() {
+            const focusedLetter = document.querySelector('.letter.focused');
+            if (focusedLetter) {
+                    focusedLetter.classList.add('clicked');
+                    playSound('incorrect');
+
+}};
+
+document.querySelectorAll('.comodin-button').forEach(button => {
+    button.addEventListener('click', function() {
+        playSound('campana');
+        this.style.display = 'none'; // Esconde el botón donde se hace clic
+    });
+});
+
+
+        createLetters();
+       
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
